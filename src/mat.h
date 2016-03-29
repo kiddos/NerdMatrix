@@ -26,11 +26,25 @@ template <class T> class mat {
   mat multiply(const mat &m) const;
   T sum() const;
   mat sum(uint32_t dim) const;
-  mat t() const;
+  mat t() const; // transpose
+  // row operation
+  void addrow(uint32_t i, T v);
+  void subtractrow(uint32_t i, T v);
+  void multiplyrow(uint32_t i, T v);
+  void dividerow(uint32_t i, T v);
+  void addcol(uint32_t i, T v);
+  void subtractcol(uint32_t i, T v);
+  void multiplycol(uint32_t i, T v);
+  void dividecol(uint32_t i, T v);
   mat appendrow(T v) const;
   mat insertrow(T v) const;
   mat appendcol(T v) const;
   mat insertcol(T v) const;
+  // math operaion
+  mat log() const;
+  mat sigmoid() const;
+  mat rectifier() const;
+  mat inv() const; // inverse
   void transpose();
 
   // operator
