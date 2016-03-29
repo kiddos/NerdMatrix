@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include "../src/mat.h"
 
+using core::mat;
+
 void print_mat(mat<int> m);
 void print_mat(mat<double> m);
 void print_mat(mat<float> m);

@@ -10,6 +10,7 @@
 
 using std::cout;
 using std::endl;
+using core::mat;
 
 bool dequal(double a, double b) {
   const double diff = 0.00000001;

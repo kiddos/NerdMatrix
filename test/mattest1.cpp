@@ -9,6 +9,7 @@ using std::cout;
 using std::cin;
 using std::endl;
 using std::string;
+using core::mat;
 
 typedef unsigned long long int LONG;
 
