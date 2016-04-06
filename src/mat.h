@@ -20,13 +20,12 @@ template <class T> class mat {
   virtual void operator=(T d);
   virtual void operator=(const mat &m);
 
-  // operation
-  mat add(const mat &m) const;
-  mat subtract(const mat &m) const;
-  mat multiply(const mat &m) const;
-  T sum() const;
-  mat sum(uint32_t dim) const;
-  mat t() const; // transpose
+  // fundamental operation
+  virtual mat add(const mat &m) const;
+  virtual mat subtract(const mat &m) const;
+  virtual mat multiply(const mat &m) const;
+  virtual T sum() const;
+  virtual mat sum(uint32_t dim) const;
   // row operation
   void addrow(uint32_t i, T v);
   void subtractrow(uint32_t i, T v);
@@ -43,9 +42,14 @@ template <class T> class mat {
   // math operaion
   mat log() const;
   mat sigmoid() const;
+  mat sigmoidgrad() const;
   mat rectifier() const;
-  mat inv() const; // inverse
-  void transpose();
+  mat rectifiergrad() const;
+  // transpose and inverse
+  virtual mat t() const; // transpose
+  virtual mat inv() const; // inverse
+  virtual void transpose();
+  virtual void inverse();
 
   // operator
   mat operator+(const mat &m) const;
@@ -66,7 +70,7 @@ template <class T> class mat {
   static mat zero(uint32_t nrows, uint32_t ncols);
   static mat ones(uint32_t nrows, uint32_t ncols);
   static mat eye(uint32_t dim);
-  static mat rand(uint32_t nrows, uint32_t ncols);
+  static mat rand(double (*rand)(), uint32_t nrows, uint32_t ncols);
 
   uint32_t nrows, ncols;
   T *data;
@@ -125,7 +129,7 @@ template <class T> mat<T>::~mat() {
   if (data != nullptr)
     delete data;
 }
-
+// fundamental operation
 template <class T> mat<T> mat<T>::add(const mat<T> &m) const {
   if (ncols != m.ncols || nrows != m.nrows) {
     return mat();
@@ -216,15 +220,52 @@ template <class T> mat<T> mat<T>::sum(uint32_t dim) const {
   }
   return sum;
 }
-template <class T> mat<T> mat<T>::t() const {
-  mat m(this->ncols, this->nrows);
-  for (uint32_t i = 0 ; i < m.nrows ; ++i) {
-    for (uint32_t j = 0 ; j < m.ncols ; ++j) {
-      m.data[i * m.ncols + j] = this->data[j * this->ncols + i];
-    }
+// row operation on self
+template <class T> void mat<T>::addrow(uint32_t i, T v) {
+  const uint32_t rowindex = i * ncols;
+  for (uint32_t k = 0 ; k < ncols ; ++k) {
+    data[rowindex + k] += v;
   }
-  return m;
 }
+template <class T> void mat<T>::subtractrow(uint32_t i, T v) {
+  const uint32_t rowindex = i * ncols;
+  for (uint32_t k = 0 ; k < ncols ; ++k) {
+    data[rowindex + k] -= v;
+  }
+}
+template <class T> void mat<T>::multiplyrow(uint32_t i, T v) {
+  const uint32_t rowindex = i * ncols;
+  for (uint32_t k = 0 ; k < ncols ; ++k) {
+    data[rowindex + k] *= v;
+  }
+}
+template <class T> void mat<T>::dividerow(uint32_t i, T v) {
+  const uint32_t rowindex = i * ncols;
+  for (uint32_t k = 0 ; k < ncols ; ++k) {
+    data[rowindex + k] /= v;
+  }
+}
+template <class T> void mat<T>::addcol(uint32_t i, T v) {
+  for (uint32_t k = 0 ; k < nrows ; ++k) {
+    data[k * ncols + i] += v;
+  }
+}
+template <class T> void mat<T>::subtractcol(uint32_t i, T v) {
+  for (uint32_t k = 0 ; k < nrows ; ++k) {
+    data[k * ncols + i] -= v;
+  }
+}
+template <class T> void mat<T>::multiplycol(uint32_t i, T v) {
+  for (uint32_t k = 0 ; k < nrows ; ++k) {
+    data[k * ncols + i] *= v;
+  }
+}
+template <class T> void mat<T>::dividecol(uint32_t i, T v) {
+  for (uint32_t k = 0 ; k < nrows ; ++k) {
+    data[k * ncols + i] /= v;
+  }
+}
+// row operation
 template <class T> mat<T> mat<T>::insertrow(T v) const {
   mat<T> newmat(this->nrows + 1, this->ncols);
   for (uint32_t i = 0 ; i < newmat.nrows ; ++i) {
@@ -271,6 +312,104 @@ template <class T> mat<T> mat<T>::appendcol(T v) const {
   }
   return newmat;
 }
+// math operaion
+template <class T> mat<T> mat<T>::log() const {
+  mat m(nrows, ncols);
+  for (uint32_t i = 0 ; i < nrows ; ++i) {
+    for (uint32_t j = 0 ; j < ncols ; ++j) {
+      m.data[i * ncols + j] = static_cast<T>(log(data[i * ncols + j]));
+    }
+  }
+  return m;
+}
+template <class T> mat<T> mat<T>::sigmoid() const {
+  mat m(nrows, ncols);
+  for (uint32_t i = 0 ; i < nrows ; ++i) {
+    for (uint32_t j = 0 ; j < ncols ; ++j) {
+      m.data[i * ncols + j] = static_cast<T>(1 / (1 + exp(-data[i * ncols + j])));
+    }
+  }
+  return m;
+}
+template <class T> mat<T> mat<T>::sigmoidgrad() const {
+  mat m(nrows, ncols);
+  for (uint32_t i = 0 ; i < nrows ; ++i) {
+    for (uint32_t j = 0 ; j < ncols ; ++j) {
+      const T v = exp(-data[i * ncols + j]);
+      m.data[i * ncols + j] = static_cast<T>(v / ((1+v) * (1+v)));
+    }
+  }
+  return m;
+}
+template <class T> mat<T> mat<T>::rectifier() const {
+  mat m(nrows, ncols);
+  for (uint32_t i = 0 ; i < nrows ; ++i) {
+    for (uint32_t j = 0 ; j < ncols ; ++j) {
+      m.data[i * ncols + j] = data[i * ncols + j] >= 0 ? data[i * ncols + j] : 0;
+    }
+  }
+  return m;
+}
+template <class T> mat<T> mat<T>::rectifiergrad() const {
+  mat m(nrows, ncols);
+  for (uint32_t i = 0 ; i < nrows ; ++i) {
+    for (uint32_t j = 0 ; j < ncols ; ++j) {
+      m.data[i * ncols + j] = data[i * ncols + j] >= 0 ? 1 : 0;
+    }
+  }
+  return m;
+}
+// transpose and inverse
+template <class T> mat<T> mat<T>::inv() const {
+  if (nrows != ncols) return mat();
+
+  mat m(nrows, ncols);
+  for (uint32_t k = 0 ; k < nrows ; ++k) {
+    for (uint32_t i = k ; i < nrows ; ++i) {
+      dividerow(i, data[i * ncols]);
+      m.dividerow(i, data[i * ncols]);
+    }
+    for (uint32_t i = k + 1 ; i < nrows ; ++i) {
+      for (uint32_t j = 0 ; j < ncols ; ++j) {
+        data[i * ncols + j] -= data[k * ncols + j];
+        m.data[i * ncols + j] -= m.data[k * ncols + j];
+      }
+    }
+  }
+  return m;
+}
+template <class T> void mat<T>::inverse() {
+  if (nrows != ncols) return;
+
+  mat m(nrows, ncols);
+  for (uint32_t k = 0 ; k < nrows ; ++k) {
+    for (uint32_t i = k ; i < nrows ; ++i) {
+      dividerow(i, data[i * ncols]);
+      m.dividerow(i, data[i * ncols]);
+    }
+    for (uint32_t i = k + 1 ; i < nrows ; ++i) {
+      for (uint32_t j = 0 ; j < ncols ; ++j) {
+        data[i * ncols + j] -= data[k * ncols + j];
+        m.data[i * ncols + j] -= m.data[k * ncols + j];
+      }
+    }
+  }
+
+  for (uint32_t i = 0 ; i < nrows; ++ i) {
+    for (uint32_t j = 0 ; j < ncols ; ++j) {
+      data[i * ncols + j] = m.data[i * ncols + j];
+    }
+  }
+}
+template <class T> mat<T> mat<T>::t() const {
+  mat m(this->ncols, this->nrows);
+  for (uint32_t i = 0 ; i < m.nrows ; ++i) {
+    for (uint32_t j = 0 ; j < m.ncols ; ++j) {
+      m.data[i * m.ncols + j] = this->data[j * this->ncols + i];
+    }
+  }
+  return m;
+}
 template <class T> void mat<T>::transpose() {
   float *newdata = new float[nrows * ncols];
   for (uint32_t i = 0 ; i < nrows ; ++i) {
@@ -281,7 +420,7 @@ template <class T> void mat<T>::transpose() {
   if (data) delete data;
   data = newdata;
 }
-
+// operators
 template <class T> void mat<T>::operator=(T d) {
   nrows = 1;
   ncols = 1;
@@ -380,7 +519,7 @@ template <class T> T mat<T>::operator[](uint32_t i) const {
     return data[i];
   else return 0;
 }
-
+// static functions
 template <class T> mat<T> mat<T>::zero(uint32_t nrows, uint32_t ncols) {
   return mat(nrows, ncols);
 }
@@ -400,15 +539,40 @@ template <class T> mat<T> mat<T>::eye(uint32_t dim) {
   }
   return m;
 }
-template <class T> mat<T> mat<T>::rand(uint32_t nrows, uint32_t ncols) {
+template <class T> mat<T> mat<T>::rand(double (*rand)(), uint32_t nrows, uint32_t ncols) {
   mat m(nrows, ncols);
   for (uint32_t i = 0 ; i < nrows ; ++ i) {
     for (uint32_t j = 0 ; j < ncols ; ++ j) {
-      m.data[i * ncols + j] = (rand() % 10000);
+      m.data[i * ncols + j] = static_cast<T>(rand());
     }
   }
   return m;
 }
+
+class Mat : public mat<double> {
+ public:
+  Mat();
+  Mat(const mat &m);
+  Mat(uint32_t nrows, uint32_t ncols);
+  Mat(uint32_t nrows, uint32_t ncols, double *data);
+  Mat(uint32_t nrows, uint32_t ncols, double **data);
+  virtual ~Mat();
+  virtual void operator=(double d);
+  virtual void operator=(const Mat &m);
+
+  // fundamental operation
+  virtual mat add(const mat &m) const;
+  virtual mat subtract(const mat &m) const;
+  virtual mat multiply(const mat &m) const;
+  virtual double sum() const;
+  virtual mat sum(uint32_t dim) const;
+
+  // transpose and inverse
+  virtual mat t() const; // transpose
+  virtual mat inv() const; // inverse
+  virtual void transpose();
+  virtual void inverse();
+};
 
 } // end of core namesapce
 
