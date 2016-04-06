@@ -5,9 +5,11 @@
 
 typedef unsigned int uint32_t;
 
-#define nullptr ((T *) 0)
+namespace core {
 
-namespace core{
+#ifndef nullptr
+#define nullptr ((T *) 0)
+#endif
 
 template <class T> class mat {
  public:
@@ -574,7 +576,7 @@ class Mat : public mat<double> {
   virtual void inverse();
 };
 
+#undef nullptr
 } // end of core namesapce
 
-#undef nullptr
 #endif /* end of include guard: MAT_H */
