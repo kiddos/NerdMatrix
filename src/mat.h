@@ -1,8 +1,6 @@
 #ifndef MAT_H
 #define MAT_H
 
-#include <math.h>
-
 #ifdef PARALLEL
 #include <omp.h>
 #endif
@@ -89,13 +87,8 @@ template <class T> mat<T>::mat(const mat<T> &m) {
   ncols = m.ncols;
   data = new T[nrows * ncols];
 
-#ifdef PARALLEL
-  #pragma omp parallel for
-#endif
-  for (uint32_t i = 0 ; i < nrows ; i ++) {
-    for (uint32_t j = 0 ; j < ncols ; j ++) {
-      data[i * ncols + j] = m.data[i * ncols + j];
-    }
+  for (uint32_t i = 0 ; i < nrows * ncols ; i ++) {
+    data[i] = m.data[i];
   }
 }
 template <class T> mat<T>::mat(uint32_t nrows, uint32_t ncols) {
@@ -103,13 +96,8 @@ template <class T> mat<T>::mat(uint32_t nrows, uint32_t ncols) {
   this->ncols = ncols;
   this->data = new T[nrows * ncols];
 
-#ifdef PARALLEL
-  #pragma omp parallel for
-#endif
-  for (uint32_t i = 0 ; i < nrows ; i ++) {
-    for (uint32_t j = 0 ; j < ncols ; j ++) {
-      data[i * ncols + j] = 0;
-    }
+  for (uint32_t i = 0 ; i < nrows * ncols ; ++i) {
+    data[i] = 0;
   }
 }
 template <class T> mat<T>::mat(uint32_t nrows, uint32_t ncols, T *data) {
@@ -117,13 +105,8 @@ template <class T> mat<T>::mat(uint32_t nrows, uint32_t ncols, T *data) {
   this->ncols = ncols;
   this->data = new T[nrows * ncols];
 
-#ifdef PARALLEL
-  #pragma omp parallel for
-#endif
-  for (uint32_t i = 0 ; i < nrows ; i ++) {
-    for (uint32_t j = 0 ; j < ncols ; j ++) {
-      this->data[i * ncols + j] = data[i * ncols + j];
-    }
+  for (uint32_t i = 0 ; i < nrows * ncols; i ++) {
+    this->data[i] = data[i];
   }
 }
 template <class T> mat<T>::mat(uint32_t nrows, uint32_t ncols, T **data) {
@@ -131,9 +114,6 @@ template <class T> mat<T>::mat(uint32_t nrows, uint32_t ncols, T **data) {
   this->ncols = ncols;
   this->data = new T[nrows * ncols];
 
-#ifdef PARALLEL
-  #pragma omp parallel for
-#endif
   for (uint32_t i = 0 ; i < nrows ; i ++) {
     for (uint32_t j = 0 ; j < ncols ; j ++) {
       this->data[i * ncols + j] = data[i][j];
@@ -149,68 +129,45 @@ template <class T> mat<T> mat<T>::add(const mat<T> &m) const {
   if (ncols != m.ncols || nrows != m.nrows) {
     return mat();
   } else {
-    mat newMat(this->nrows, this->ncols);
-    const uint32_t ncols = this->ncols, nrows = this->nrows;
+    mat newmat(nrows, ncols);
 
-#ifdef PARALLEL
-  #pragma omp parallel for
-#endif
-    for (uint32_t i = 0 ; i < nrows ; ++i) {
-      for (uint32_t j = 0 ; j < ncols ; ++j) {
-        const uint32_t index = i * ncols + j;
-        newMat.data[index] = this->data[index] + m.data[index];
-      }
+    for (uint32_t i = 0 ; i < nrows * ncols ; ++i) {
+      newmat.data[i] = data[i] + m.data[i];
     }
-    return newMat;
+    return newmat;
   }
 }
 template <class T> mat<T> mat<T>::subtract(const mat<T> &m) const {
   if (this->ncols != m.ncols || this->nrows != m.nrows) {
     return mat();
   } else {
-    mat newMat(this->nrows, this->ncols);
-    const uint32_t ncols = this->ncols, nrows = this->nrows;
+    mat newmat(nrows, ncols);
 
-#ifdef PARALLEL
-  #pragma omp parallel for
-#endif
-    for (uint32_t i = 0 ; i < nrows ; i ++) {
-      for (uint32_t j = 0 ; j < ncols ; j ++) {
-        const uint32_t index = i * ncols + j;
-        newMat.data[index] = this->data[index] - m.data[index];
-      }
+    for (uint32_t i = 0 ; i < nrows * ncols ; ++i) {
+      newmat.data[i] = data[i] - m.data[i];
     }
-    return newMat;
+    return newmat;
   }
 }
 template <class T> mat<T> mat<T>::multiply(const mat<T> &m) const {
   if (this->ncols != m.nrows) {
     return mat();
   } else {
-    mat newMat(this->nrows, m.ncols);
+    mat newmat(nrows, m.ncols);
 
-#ifdef PARALLEL
-  #pragma omp parallel for
-#endif
-    for (uint32_t i = 0 ; i < this->nrows ; ++i) {
-      for (uint32_t j = 0 ; j < m.ncols ; ++j) {
-        const uint32_t index = i * m.ncols + j;
-        newMat.data[index] = 0;
-        for (uint32_t k = 0 ; k < this->ncols ; ++k) {
-          newMat.data[index] += this->data[i * this->ncols + k] *
-              m.data[k * m.ncols + j];
-        }
+    for (uint32_t i = 0 ; i < nrows * m.ncols ; ++i) {
+      newmat.data[i] = 0;
+      for (uint32_t k = 0 ; k < ncols ; ++k) {
+        newmat.data[i] += data[(i / m.ncols) * ncols + k] *
+            m.data[k * m.ncols + (i % m.ncols)];
       }
     }
-    return newMat;
+    return newmat;
   }
 }
 template <class T> T mat<T>::sum() const {
   mat sum = mat(1, 1);
 
-#ifdef PARALLEL
-  #pragma omp parallel for
-#endif
   for (uint32_t i = 0 ; i < this->nrows ; ++i) {
     for (uint32_t j = 0 ; j < this->ncols ; ++j) {
       sum.data[0] += data[i * this->ncols + j];
@@ -224,9 +181,6 @@ template <class T> mat<T> mat<T>::sum(uint32_t dim) const {
     case 0:
       sum = mat(1, 1);
 
-#ifdef PARALLEL
-      #pragma omp parallel for
-#endif
       for (uint32_t i = 0 ; i < this->nrows ; ++i) {
         for (uint32_t j = 0 ; j < this->ncols ; ++j) {
           sum.data[0] += data[i * this->ncols + j];
@@ -236,9 +190,6 @@ template <class T> mat<T> mat<T>::sum(uint32_t dim) const {
       break;
     case 1:
       sum = mat(1, this->ncols);
-#ifdef PARALLEL
-      #pragma omp parallel for
-#endif
       for (uint32_t j = 0 ; j < this->ncols ; ++j) {
         for (uint32_t i = 0 ; i < this->nrows ; ++i) {
           sum.data[j] += data[i * this->ncols + j];
@@ -248,9 +199,6 @@ template <class T> mat<T> mat<T>::sum(uint32_t dim) const {
       break;
     case 2:
       sum = mat(this->nrows, 1);
-#ifdef PARALLEL
-      #pragma omp parallel for
-#endif
       for (uint32_t i = 0 ; i < this->nrows ; ++i) {
         for (uint32_t j = 0 ; j < this->ncols ; ++j) {
           sum.data[i] += data[i * this->ncols + j];
@@ -264,76 +212,44 @@ template <class T> mat<T> mat<T>::sum(uint32_t dim) const {
 // row operation on self
 template <class T> void mat<T>::addrow(uint32_t i, T v) {
   const uint32_t rowindex = i * ncols;
-
-#ifdef PARALLEL
-  #pragma omp parallel for
-#endif
   for (uint32_t k = 0 ; k < ncols ; ++k) {
     data[rowindex + k] += v;
   }
 }
 template <class T> void mat<T>::subtractrow(uint32_t i, T v) {
   const uint32_t rowindex = i * ncols;
-
-#ifdef PARALLEL
-  #pragma omp parallel for
-#endif
   for (uint32_t k = 0 ; k < ncols ; ++k) {
     data[rowindex + k] -= v;
   }
 }
 template <class T> void mat<T>::multiplyrow(uint32_t i, T v) {
   const uint32_t rowindex = i * ncols;
-
-#ifdef PARALLEL
-  #pragma omp parallel for
-#endif
   for (uint32_t k = 0 ; k < ncols ; ++k) {
     data[rowindex + k] *= v;
   }
 }
 template <class T> void mat<T>::dividerow(uint32_t i, T v) {
   const uint32_t rowindex = i * ncols;
-
-#ifdef PARALLEL
-  #pragma omp parallel for
-#endif
   for (uint32_t k = 0 ; k < ncols ; ++k) {
     data[rowindex + k] /= v;
   }
 }
 template <class T> void mat<T>::addcol(uint32_t i, T v) {
-
-#ifdef PARALLEL
-  #pragma omp parallel for
-#endif
   for (uint32_t k = 0 ; k < nrows ; ++k) {
     data[k * ncols + i] += v;
   }
 }
 template <class T> void mat<T>::subtractcol(uint32_t i, T v) {
-
-#ifdef PARALLEL
-  #pragma omp parallel for
-#endif
   for (uint32_t k = 0 ; k < nrows ; ++k) {
     data[k * ncols + i] -= v;
   }
 }
 template <class T> void mat<T>::multiplycol(uint32_t i, T v) {
-
-#ifdef PARALLEL
-  #pragma omp parallel for
-#endif
   for (uint32_t k = 0 ; k < nrows ; ++k) {
     data[k * ncols + i] *= v;
   }
 }
 template <class T> void mat<T>::dividecol(uint32_t i, T v) {
-
-#ifdef PARALLEL
-  #pragma omp parallel for
-#endif
   for (uint32_t k = 0 ; k < nrows ; ++k) {
     data[k * ncols + i] /= v;
   }
@@ -341,10 +257,6 @@ template <class T> void mat<T>::dividecol(uint32_t i, T v) {
 // row operation
 template <class T> mat<T> mat<T>::insertrow(T v) const {
   mat<T> newmat(this->nrows + 1, this->ncols);
-
-#ifdef PARALLEL
-  #pragma omp parallel for
-#endif
   for (uint32_t i = 0 ; i < newmat.nrows ; ++i) {
     for (uint32_t j = 0 ; j < newmat.ncols ; ++j) {
       if (i == 0) {
@@ -358,10 +270,6 @@ template <class T> mat<T> mat<T>::insertrow(T v) const {
 }
 template <class T> mat<T> mat<T>::appendrow(T v) const {
   mat<T> newmat(this->nrows + 1, this->ncols);
-
-#ifdef PARALLEL
-  #pragma omp parallel for
-#endif
   for (uint32_t i = 0 ; i < newmat.nrows ; ++i) {
     for (uint32_t j = 0 ; j < newmat.ncols ; ++j) {
       if (i == newmat.nrows - 1) {
@@ -375,10 +283,6 @@ template <class T> mat<T> mat<T>::appendrow(T v) const {
 }
 template <class T> mat<T> mat<T>::insertcol(T v) const {
   mat<T> newmat(this->nrows, this->ncols + 1);
-
-#ifdef PARALLEL
-  #pragma omp parallel for
-#endif
   for (uint32_t i = 0 ; i < newmat.nrows ; ++ i) {
     newmat.data[i * newmat.ncols] = v;
     for (uint32_t j = 1 ; j < newmat.ncols ; ++ j) {
@@ -389,10 +293,6 @@ template <class T> mat<T> mat<T>::insertcol(T v) const {
 }
 template <class T> mat<T> mat<T>::appendcol(T v) const {
   mat<T> newmat(this->nrows, this->ncols + 1);
-
-#ifdef PARALLEL
-  #pragma omp parallel for
-#endif
   for (uint32_t i = 0 ; i < newmat.nrows ; ++ i) {
     for (uint32_t j = 0 ; j < newmat.ncols - 1 ; ++ j) {
       newmat.data[i * newmat.ncols + j] = this->data[i * this->ncols + (j-1)];
@@ -404,10 +304,6 @@ template <class T> mat<T> mat<T>::appendcol(T v) const {
 // math operation
 template <class T> mat<T> mat<T>::f(T (*g)(T)) const {
   mat<T> m(nrows, ncols);
-
-#ifdef PARALLEL
-  #pragma omp parallel for
-#endif
   for (uint32_t i = 0 ; i < nrows ; ++i) {
     for (uint32_t j = 0 ; j < ncols ; ++j) {
       m.data[i * ncols + j] = g(data[i * ncols + j]);
@@ -416,9 +312,6 @@ template <class T> mat<T> mat<T>::f(T (*g)(T)) const {
   return m;
 }
 template <class T> void mat<T>::func(T (*g)(T)) {
-#ifdef PARALLEL
-  #pragma omp parallel for
-#endif
   for (uint32_t i = 0 ; i < nrows ; ++i) {
     for (uint32_t j = 0 ; j < ncols ; ++j) {
       data[i * ncols + j] = g(data[i * ncols + j]);
@@ -426,6 +319,26 @@ template <class T> void mat<T>::func(T (*g)(T)) {
   }
 }
 // transpose and inverse
+template <class T> mat<T> mat<T>::t() const {
+  mat m(this->ncols, this->nrows);
+  for (uint32_t i = 0 ; i < m.nrows ; ++i) {
+    for (uint32_t j = 0 ; j < m.ncols ; ++j) {
+      m.data[i * m.ncols + j] = this->data[j * this->ncols + i];
+    }
+  }
+  return m;
+}
+template <class T> void mat<T>::transpose() {
+  T *newdata = new T[nrows * ncols];
+  for (uint32_t i = 0 ; i < nrows ; ++i) {
+    for (uint32_t j = 0 ; j < ncols ; ++j) {
+      newdata[j * nrows + i] = data[i * ncols + j];
+    }
+  }
+  if (data) delete data;
+  data = newdata;
+}
+// TODO need to fix inverse function
 template <class T> mat<T> mat<T>::inv() const {
   if (nrows != ncols) return mat();
 
@@ -476,31 +389,6 @@ template <class T> void mat<T>::inverse() {
     }
   }
 }
-template <class T> mat<T> mat<T>::t() const {
-  mat m(this->ncols, this->nrows);
-#ifdef PARALLEL
-  #pragma omp parallel for
-#endif
-  for (uint32_t i = 0 ; i < m.nrows ; ++i) {
-    for (uint32_t j = 0 ; j < m.ncols ; ++j) {
-      m.data[i * m.ncols + j] = this->data[j * this->ncols + i];
-    }
-  }
-  return m;
-}
-template <class T> void mat<T>::transpose() {
-  T *newdata = new T[nrows * ncols];
-#ifdef PARALLEL
-  #pragma omp parallel for
-#endif
-  for (uint32_t i = 0 ; i < nrows ; ++i) {
-    for (uint32_t j = 0 ; j < ncols ; ++j) {
-      newdata[j * nrows + i] = data[i * ncols + j];
-    }
-  }
-  if (data) delete data;
-  data = newdata;
-}
 // operators
 template <class T> void mat<T>::operator=(T d) {
   // delete old data
@@ -518,15 +406,8 @@ template <class T> void mat<T>::operator=(const mat<T> &m) {
   nrows = m.nrows;
   ncols = m.ncols;
   data = new T[m.nrows * m.ncols];
-
-#ifdef PARALLEL
-  #pragma omp parallel for
-#endif
   for (uint32_t i = 0 ; i < nrows ; ++i) {
-    for (uint32_t j = 0 ; j < ncols ; ++j) {
-      const uint32_t index = i * ncols + j;
-      data[index] = m.data[index];
-    }
+    data[i] = m.data[i];
   }
 }
 template <class T> mat<T> mat<T>::operator+(const mat<T> &m) const {
@@ -543,11 +424,7 @@ template <class T> mat<T> mat<T>::operator%(const mat<T> &m) const {
     return mat();
   } else {
     mat newMat(this->nrows, this->ncols);
-    const uint32_t ncols = this->ncols, nrows = this->nrows;
 
-#ifdef PARALLEL
-    #pragma omp parallel for
-#endif
     for (uint32_t i = 0 ; i < nrows ; ++i) {
       for (uint32_t j = 0 ; j < ncols ; ++j) {
         const uint32_t index = i * ncols + j;
@@ -559,10 +436,6 @@ template <class T> mat<T> mat<T>::operator%(const mat<T> &m) const {
 }
 template <class T> mat<T> mat<T>::operator-() const {
   mat m(this->nrows, this->ncols);
-
-#ifdef PARALLEL
-  #pragma omp parallel for
-#endif
   for (uint32_t i = 0 ; i < m.nrows ; ++ i) {
     for (uint32_t j = 0 ; j < m.ncols ; ++ j) {
       m.data[i * m.ncols + j] = - m.data[i * m.ncols + j];
@@ -572,10 +445,6 @@ template <class T> mat<T> mat<T>::operator-() const {
 }
 template <class T> mat<T> mat<T>::operator+(T d) const {
   mat m(nrows, ncols);
-
-#ifdef PARALLEL
-  #pragma omp parallel for
-#endif
   for (uint32_t i = 0 ; i < m.nrows ; ++ i) {
     for (uint32_t j = 0 ; j < m.ncols ; ++ j) {
       m.data[i * m.ncols + j] = this->data[i * this->ncols + j] + d;
@@ -585,10 +454,6 @@ template <class T> mat<T> mat<T>::operator+(T d) const {
 }
 template <class T> mat<T> mat<T>::operator-(T d) const {
   mat m(this->nrows, this->ncols);
-
-#ifdef PARALLEL
-  #pragma omp parallel for
-#endif
   for (uint32_t i = 0 ; i < m.nrows ; ++ i) {
     for (uint32_t j = 0 ; j < m.ncols ; ++ j) {
       m.data[i * m.ncols + j] = this->data[i * this->ncols + j] - d;
@@ -598,10 +463,6 @@ template <class T> mat<T> mat<T>::operator-(T d) const {
 }
 template <class T> mat<T> mat<T>::operator*(T d) const {
   mat m(this->nrows, this->ncols);
-
-#ifdef PARALLEL
-  #pragma omp parallel for
-#endif
   for (uint32_t i = 0 ; i < m.nrows ; ++ i) {
     for (uint32_t j = 0 ; j < m.ncols ; ++ j) {
       m.data[i * m.ncols + j] = this->data[i * this->ncols + j] * d;
@@ -611,10 +472,6 @@ template <class T> mat<T> mat<T>::operator*(T d) const {
 }
 template <class T> mat<T> mat<T>::operator/(T d) const {
   mat m(nrows, ncols);
-
-#ifdef PARALLEL
-  #pragma omp parallel for
-#endif
   for (uint32_t i = 0 ; i < m.nrows ; ++ i) {
     for (uint32_t j = 0 ; j < m.ncols ; ++ j) {
       m.data[i * m.ncols + j] = this->data[i * this->ncols + j] / d;
@@ -636,10 +493,6 @@ template <class T> mat<T> mat<T>::zero(uint32_t nrows, uint32_t ncols) {
 }
 template <class T> mat<T> mat<T>::ones(uint32_t nrows, uint32_t ncols) {
   mat m(nrows, ncols);
-
-#ifdef PARALLEL
-  #pragma omp parallel for
-#endif
   for (uint32_t i = 0 ; i < nrows ; ++ i) {
     for (uint32_t j = 0 ; j < ncols ; ++ j) {
       m.data[i * ncols + j] = 1;
@@ -649,30 +502,23 @@ template <class T> mat<T> mat<T>::ones(uint32_t nrows, uint32_t ncols) {
 }
 template <class T> mat<T> mat<T>::eye(uint32_t dim) {
   mat m(dim, dim);
-
-#ifdef PARALLEL
-  #pragma omp parallel for
-#endif
   for (uint32_t i = 0 ; i < dim ; i ++) {
     m.data[i * m.ncols + i] = 1;
   }
   return m;
 }
-template <class T> mat<T> mat<T>::rand(double (*rand)(),
+template <class T> mat<T> mat<T>::rand(double (*randfunc)(),
                                        uint32_t nrows, uint32_t ncols) {
   mat m(nrows, ncols);
-
-#ifdef PARALLEL
-  #pragma omp parallel for
-#endif
   for (uint32_t i = 0 ; i < nrows ; ++ i) {
     for (uint32_t j = 0 ; j < ncols ; ++ j) {
-      m.data[i * ncols + j] = static_cast<T>(rand());
+      m.data[i * ncols + j] = static_cast<T>(randfunc());
     }
   }
   return m;
 }
 
+typedef mat<double> Mat;
 #undef nullptr
 } // end of core namesapce
 
