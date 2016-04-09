@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <time.h>
+#include <omp.h>
 
 #include "common.h"
 #include "../src/mat.h"
@@ -44,25 +45,43 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  cout << "matrix dimension: (" << nrows << ", " << ncols << ")" << endl;
   mat<double> testA(nrows, ncols, dataA);
   mat<double> testB(nrows, ncols, dataB);
   mat<double> testC(ncols, nrows, dataC);
-  mat<double> addTest = testA.add(testB);
-  mat<double> subTest = testA.subtract(testB);
-  mat<double> mulTest = testA.multiply(testC);
+
+  double start = 0;
+
+  start = omp_get_wtime();
   arma::mat addResult = A + B;
   arma::mat subResult = A - B;
   arma::mat mulResult = A * C;
+  cout << "arma done, time use: " << (omp_get_wtime() - start) << endl;
+
+  start = omp_get_wtime();
+  mat<double> addTest = testA.add(testB);
+  mat<double> subTest = testA.subtract(testB);
+  mat<double> mulTest = testA.multiply(testC);
+  cout << "test done, time use: " << (omp_get_wtime() - start)  << endl;
 
   for (uint64_t i = 0 ; i < nrows ; i ++) {
     for (uint64_t j = 0 ; j < ncols ; j ++) {
-      if (!dequal(addTest(i, j), addResult(i, j))) return -1;
-      if (!dequal(subTest(i, j), subResult(i, j))) return -1;
+      if (!dequal(addTest(i, j), addResult(i, j))) {
+        cout << "wrong addition result" << endl;
+        return -1;
+      }
+      if (!dequal(subTest(i, j), subResult(i, j))) {
+        cout << "wrong subtraction result" << endl;
+        return -1;
+      }
     }
   }
   for (uint64_t i = 0 ; i < mulTest.nrows ; i ++) {
     for (uint64_t j = 0 ; j < mulTest.ncols ; j ++) {
-      if (!dequal(mulTest(i, j), mulResult(i, j))) return -1;
+      if (!dequal(mulTest(i, j), mulResult(i, j))) {
+        cout << "wrong multiplication result" << endl;
+        return -1;
+      }
     }
   }
 
