@@ -338,51 +338,95 @@ template <class T> void mat<T>::transpose() {
   if (data) delete data;
   data = newdata;
 }
-// TODO need to fix inverse function
+// TODO need to fix inverse function rounding trailing
 template <class T> mat<T> mat<T>::inv() const {
   if (nrows != ncols) return mat();
 
-  mat m(nrows, ncols);
-  // copy over the data
-  mat temp(nrows, ncols);
+  mat m = eye(nrows);
+  mat temp(nrows, ncols, data);
 
-  for (uint32_t i = 0 ; i < nrows ; ++i) {
-    for (uint32_t j = 0 ; j < ncols ; ++j) {
-      temp.data[i * nrows + j] = data[i * nrows + j];
-    }
-  }
-
-  for (uint32_t k = 0 ; k < nrows ; ++k) {
+  for (uint32_t k = 0 ; k < ncols ; ++k) {
+    uint32_t nonzerorow = k;
     for (uint32_t i = k ; i < nrows ; ++i) {
-      temp.dividerow(i, temp.data[i * ncols]);
-      m.dividerow(i, temp.data[i * ncols]);
+      if (temp.data[i * ncols + k] != 0) {
+        nonzerorow = i;
+        m.dividerow(nonzerorow, temp.data[nonzerorow * ncols + k]);
+        temp.dividerow(nonzerorow, temp.data[nonzerorow * ncols + k]);
+        break;
+      }
     }
-    for (uint32_t i = k + 1 ; i < nrows ; ++i) {
+
+    if (nonzerorow != k) {
       for (uint32_t j = 0 ; j < ncols ; ++j) {
-        temp.data[i * ncols + j] -= temp.data[k * ncols + j];
-        m.data[i * ncols + j] -= m.data[k * ncols + j];
+        T t = temp.data[k * ncols + j];
+        temp.data[k * ncols + j] = temp.data[nonzerorow * ncols + j];
+        temp.data[nonzerorow * ncols + j] = t;
+
+        t = m.data[k * ncols + j];
+        m.data[k * ncols + j] = m.data[nonzerorow * ncols + j];
+        m.data[nonzerorow * ncols + j] = t;
+      }
+    }
+
+    for (uint32_t i = 0 ; i < nrows ; ++i) {
+      if (i != k) {
+        for (uint32_t j = 0 ; j < ncols ; ++j) {
+          m.data[i * ncols + j] -= temp.data[i * ncols + k] * m.data[k * ncols + j];
+          if (j != k) {
+            temp.data[i * ncols + j] -= temp.data[i * ncols + k] *
+                    temp.data[k * ncols + j];
+          }
+        }
+        temp.data[i * ncols + k] = 0;
       }
     }
   }
+
   return m;
 }
 template <class T> void mat<T>::inverse() {
   if (nrows != ncols) return;
 
-  mat m(nrows, ncols);
-  for (uint32_t k = 0 ; k < nrows ; ++k) {
+  // TODO check inversable
+  mat m = eye(nrows);
+
+  for (uint32_t k = 0 ; k < ncols ; ++k) {
+    uint32_t nonzerorow = k;
     for (uint32_t i = k ; i < nrows ; ++i) {
-      dividerow(i, data[i * ncols]);
-      m.dividerow(i, data[i * ncols]);
+      if (data[i * ncols + k] != 0) {
+        nonzerorow = i;
+        m.dividerow(nonzerorow, data[nonzerorow * ncols + k]);
+        dividerow(nonzerorow, data[nonzerorow * ncols + k]);
+        break;
+      }
     }
-    for (uint32_t i = k + 1 ; i < nrows ; ++i) {
+
+    if (nonzerorow != k) {
       for (uint32_t j = 0 ; j < ncols ; ++j) {
-        data[i * ncols + j] -= data[k * ncols + j];
-        m.data[i * ncols + j] -= m.data[k * ncols + j];
+        T temp = data[k * ncols + j];
+        data[k * ncols + j] = data[nonzerorow * ncols + j];
+        data[nonzerorow * ncols + j] = temp;
+
+        temp = m.data[k * ncols + j];
+        m.data[k * ncols + j] = m.data[nonzerorow * ncols + j];
+        m.data[nonzerorow * ncols + j] = temp;
+      }
+    }
+
+    for (uint32_t i = 0 ; i < nrows ; ++i) {
+      if (i != k) {
+        for (uint32_t j = 0 ; j < ncols ; ++j) {
+          m.data[i * ncols + j] -= data[i * ncols + k] * m.data[k * ncols + j];
+          if (j != k) {
+            data[i * ncols + j] -= data[i * ncols + k] * data[k * ncols + j];
+          }
+        }
+        data[i * ncols + k] = 0;
       }
     }
   }
 
+  // copy back
   for (uint32_t i = 0 ; i < nrows; ++ i) {
     for (uint32_t j = 0 ; j < ncols ; ++j) {
       data[i * ncols + j] = m.data[i * ncols + j];
