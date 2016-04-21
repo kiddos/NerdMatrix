@@ -20,16 +20,16 @@ template <class T> class mat {
   mat(uint32_t nrows, uint32_t ncols);
   mat(uint32_t nrows, uint32_t ncols, T *data);
   mat(uint32_t nrows, uint32_t ncols, T **data);
-  virtual ~mat();
+  ~mat();
   void operator=(T d);
-  virtual void operator=(const mat &m);
+  mat& operator=(const mat &m);
 
   // fundamental operation
-  virtual mat add(const mat &m) const;
-  virtual mat subtract(const mat &m) const;
-  virtual mat multiply(const mat &m) const;
-  virtual T sum() const;
-  virtual mat sum(uint32_t dim) const;
+  mat add(const mat &m) const;
+  mat subtract(const mat &m) const;
+  mat multiply(const mat &m) const;
+  T sum() const;
+  mat sum(uint32_t dim) const;
   // row operation
   void addrow(uint32_t i, T v);
   void subtractrow(uint32_t i, T v);
@@ -47,10 +47,10 @@ template <class T> class mat {
   mat f(T (*g)(T)) const;
   void func(T (*g)(T));
   // transpose and inverse
-  virtual mat t() const; // transpose
-  virtual mat inv() const; // inverse
-  virtual void transpose();
-  virtual void inverse();
+  mat t() const; // transpose
+  mat inv() const; // inverse
+  void transpose();
+  void inverse();
 
   // operator
   mat operator+(const mat &m) const;
@@ -64,14 +64,13 @@ template <class T> class mat {
   mat operator*(T d) const;
   mat operator/(T d) const;
 
-  T operator()(uint32_t i, uint32_t j) const;
-  T operator[](uint32_t i) const;
+  T& operator()(uint32_t i, uint32_t j);
+  T& operator[](uint32_t i);
 
   // static functions
-  static mat zero(uint32_t nrows, uint32_t ncols);
+  static mat zeros(uint32_t nrows, uint32_t ncols);
   static mat ones(uint32_t nrows, uint32_t ncols);
-  static mat eye(uint32_t dim);
-  static mat rand(double (*rand)(), uint32_t nrows, uint32_t ncols);
+  static mat eyes(uint32_t dim);
 
   uint32_t nrows, ncols;
   T *data;
@@ -122,7 +121,7 @@ template <class T> mat<T>::mat(uint32_t nrows, uint32_t ncols, T **data) {
 }
 template <class T> mat<T>::~mat() {
   if (data != nullptr)
-    delete data;
+    delete[] data;
 }
 // fundamental operation
 template <class T> mat<T> mat<T>::add(const mat<T> &m) const {
@@ -335,7 +334,7 @@ template <class T> void mat<T>::transpose() {
       newdata[j * nrows + i] = data[i * ncols + j];
     }
   }
-  if (data) delete data;
+  if (data) delete[] data;
   data = newdata;
 }
 // TODO need to fix inverse function rounding trailing
@@ -436,23 +435,24 @@ template <class T> void mat<T>::inverse() {
 // operators
 template <class T> void mat<T>::operator=(T d) {
   // delete old data
-  if (data) delete data;
+  if (data) delete[] data;
 
   nrows = 1;
   ncols = 1;
   data = new T[1];
   data[0] = d;
 }
-template <class T> void mat<T>::operator=(const mat<T> &m) {
+template <class T> mat<T>& mat<T>::operator=(const mat<T> &m) {
   // delete old data
-  if (data) delete data;
+  if (data) delete[] data;
 
   nrows = m.nrows;
   ncols = m.ncols;
   data = new T[m.nrows * m.ncols];
-  for (uint32_t i = 0 ; i < nrows ; ++i) {
+  for (uint32_t i = 0 ; i < nrows * ncols ; ++i) {
     data[i] = m.data[i];
   }
+  return *this;
 }
 template <class T> mat<T> mat<T>::operator+(const mat<T> &m) const {
   return this->add(m);
@@ -482,7 +482,7 @@ template <class T> mat<T> mat<T>::operator-() const {
   mat m(this->nrows, this->ncols);
   for (uint32_t i = 0 ; i < m.nrows ; ++ i) {
     for (uint32_t j = 0 ; j < m.ncols ; ++ j) {
-      m.data[i * m.ncols + j] = - m.data[i * m.ncols + j];
+      m.data[i * m.ncols + j] = - data[i * m.ncols + j];
     }
   }
   return m;
@@ -523,16 +523,14 @@ template <class T> mat<T> mat<T>::operator/(T d) const {
   }
   return m;
 }
-template <class T> T mat<T>::operator()(uint32_t i, uint32_t j) const {
+template <class T> T& mat<T>::operator()(uint32_t i, uint32_t j) {
   return data[i * ncols + j];
 }
-template <class T> T mat<T>::operator[](uint32_t i) const {
-  if (i >= 0 && i < ncols * nrows)
-    return data[i];
-  else return 0;
+template <class T> T& mat<T>::operator[](uint32_t i) {
+  return data[i];
 }
 // static functions
-template <class T> mat<T> mat<T>::zero(uint32_t nrows, uint32_t ncols) {
+template <class T> mat<T> mat<T>::zeros(uint32_t nrows, uint32_t ncols) {
   return mat(nrows, ncols);
 }
 template <class T> mat<T> mat<T>::ones(uint32_t nrows, uint32_t ncols) {
@@ -544,20 +542,10 @@ template <class T> mat<T> mat<T>::ones(uint32_t nrows, uint32_t ncols) {
   }
   return m;
 }
-template <class T> mat<T> mat<T>::eye(uint32_t dim) {
+template <class T> mat<T> mat<T>::eyes(uint32_t dim) {
   mat m(dim, dim);
   for (uint32_t i = 0 ; i < dim ; i ++) {
     m.data[i * m.ncols + i] = 1;
-  }
-  return m;
-}
-template <class T> mat<T> mat<T>::rand(double (*randfunc)(),
-                                       uint32_t nrows, uint32_t ncols) {
-  mat m(nrows, ncols);
-  for (uint32_t i = 0 ; i < nrows ; ++ i) {
-    for (uint32_t j = 0 ; j < ncols ; ++ j) {
-      m.data[i * ncols + j] = static_cast<T>(randfunc());
-    }
   }
   return m;
 }
