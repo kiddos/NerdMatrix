@@ -341,7 +341,7 @@ template <class T> void mat<T>::transpose() {
 template <class T> mat<T> mat<T>::inv() const {
   if (nrows != ncols) return mat();
 
-  mat m = eye(nrows);
+  mat m = eyes(nrows);
   mat temp(nrows, ncols, data);
 
   for (uint32_t k = 0 ; k < ncols ; ++k) {
@@ -387,7 +387,7 @@ template <class T> void mat<T>::inverse() {
   if (nrows != ncols) return;
 
   // TODO check inversable
-  mat m = eye(nrows);
+  mat m = eyes(nrows);
 
   for (uint32_t k = 0 ; k < ncols ; ++k) {
     uint32_t nonzerorow = k;
