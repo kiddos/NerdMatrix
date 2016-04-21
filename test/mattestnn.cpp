@@ -135,7 +135,7 @@ BlackWhiteDetector::BlackWhiteDetector()
       grad1(Mat(2, 2)), grad2(Mat(3, 1)),
       grad1check(Mat(2, 2)), grad2check(Mat(3, 1)),
       alpha(1e-4), beta(1e-1), p(5e-2) {
-  x = Mat::zero(1, 2);
+  x = Mat::zeros(1, 2);
 
   // random initialize
   randmat(theta1);
@@ -198,7 +198,7 @@ double BlackWhiteDetector::computecost(const Mat &theta1, const Mat &theta2) {
 
   Mat y = removefirstcol(x);
   Mat one = Mat::ones(y.nrows, y.ncols);
-  Mat j = (Mat::zero(y.nrows, y.ncols) - y) % logmat(H) -
+  Mat j = (Mat::zeros(y.nrows, y.ncols) - y) % logmat(H) -
         (one - y) % logmat(one - H);
 
   // kullback-leibler
@@ -208,10 +208,10 @@ double BlackWhiteDetector::computecost(const Mat &theta1, const Mat &theta2) {
 }
 void BlackWhiteDetector::computegrad() {
   const float eps = 0.05;
-  grad1check = Mat::zero(theta1.nrows, theta1.ncols);
-  grad2check = Mat::zero(theta2.nrows, theta2.ncols);
+  grad1check = Mat::zeros(theta1.nrows, theta1.ncols);
+  grad2check = Mat::zeros(theta2.nrows, theta2.ncols);
 
-  Mat perturb = Mat::zero(theta1.nrows, theta1.ncols);
+  Mat perturb = Mat::zeros(theta1.nrows, theta1.ncols);
   for (uint32_t i = 0 ; i < perturb.nrows ; ++i) {
     for (uint32_t j = 0 ; j < perturb.ncols ; ++j) {
       perturb.data[i * perturb.ncols + j] = eps;
@@ -221,7 +221,7 @@ void BlackWhiteDetector::computegrad() {
       perturb.data[i * perturb.ncols + j] = 0;
     }
   }
-  perturb = Mat::zero(theta2.nrows, theta2.ncols);
+  perturb = Mat::zeros(theta2.nrows, theta2.ncols);
   for (uint32_t i = 0 ; i < perturb.nrows ; ++i) {
     for (uint32_t j = 0 ; j < perturb.ncols ; ++j) {
       perturb.data[i * perturb.ncols + j] = eps;

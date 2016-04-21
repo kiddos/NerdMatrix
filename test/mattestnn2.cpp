@@ -11,6 +11,7 @@
 
 #include "../src/mat.h"
 #include "../src/mat_io.h"
+#include "../src/mat_op.h"
 
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
@@ -96,7 +97,7 @@ class OutputLayer : public Layer {
               mat (*costd)(mat,mat,mat,mat));
   virtual void operator=(const OutputLayer &output);
   virtual mat backprop(const mat label);
-  mat argmax() const;
+  mat argmax();
   double getcostval() const;
   mfunc getcost() const;
   mfuncd getcostd() const;
@@ -251,7 +252,6 @@ mat InputLayer::forwardprop(const mat input) {
 }
 OutputLayer::OutputLayer() {}
 OutputLayer::OutputLayer(const OutputLayer &output) {
-  cout << "output & constructor" << endl;
   pnnodes = output.getpnnodes();
   lrate = output.getlrate();
   act = output.getact();
@@ -307,7 +307,7 @@ mat OutputLayer::backprop(const mat label) {
   mat newdelta = delta * W.t();
   return newdelta;
 }
-mat OutputLayer::argmax() const {
+mat OutputLayer::argmax() {
   mat result(a.nrows, 2);
   for (uint32_t i = 0 ; i < a.nrows ; ++i) {
     double maxval = a.data[i * a.ncols];
@@ -342,10 +342,7 @@ mfuncd OutputLayer::getcostd() const {
 NeuralNet::NeuralNet(const InputLayer &input, const OutputLayer &output,
                      vector<Layer> &hidden) :
                      eps(1e-5), cost(output.getcost()), costd(output.getcostd()),
-                     input(input), hidden(hidden), output(output) {
-  for (uint32_t i = 0 ; i < hidden.size() ; ++i)
-    cout << hidden[i].getw() << endl;;
-}
+                     input(input), hidden(hidden), output(output) {}
 void NeuralNet::feeddata(const mat x, const mat y, const bool check) {
   this->x = x;
   this->y = y;
@@ -493,7 +490,7 @@ double NeuralNet::computecost(const mat perturb, const uint32_t idx) {
       tempw = tempw + perturb;
     }
 
-    const mat regterm =  (tempw % tempw) * (hidden[i].getlambda() / 2.0);
+    mat regterm =  (tempw % tempw) * (hidden[i].getlambda() / 2.0);
     for (uint32_t j = 0 ; j < regterm.nrows ; ++j) {
       for (uint32_t k = 0 ; k < regterm.ncols ; ++k) {
         val += regterm(j, k);
@@ -503,8 +500,8 @@ double NeuralNet::computecost(const mat perturb, const uint32_t idx) {
   return val;
 }
 mat NeuralNet::computengrad(const int nrows, const int ncols, const int idx) {
-  mat wgrad = mat::zero(nrows, ncols);
-  mat perturb = mat::zero(nrows, ncols);
+  mat wgrad = mat::zeros(nrows, ncols);
+  mat perturb = mat::zeros(nrows, ncols);
 
   for (int i = 0 ; i < nrows ; ++i) {
     for (int j = 0 ; j < ncols ; ++j) {
@@ -535,8 +532,7 @@ double sigmoidgrad(double z) {
   return e / (b * b);
 }
 mat cost(mat y, mat h) {
-  mat one = mat::ones(y.nrows, y.ncols);
-  mat J = -(y % h.f(log) + (one-y) % (one-h).f(log));
+  mat J = -(y % h.f(log) + (1.0-y) % (1.0-h).f(log));
   return J;
 }
 mat costd(mat y, mat a, mat,mat) {
@@ -547,7 +543,7 @@ void load(mat &x, mat &y) {
   std::ifstream xinput("/home/joseph/C/project/nn/data/samplex.data", std::ios::in);
   std::ifstream yinput("/home/joseph/C/project/nn//data/sampley.data", std::ios::in);
   x = mat(100, 2);
-  y = mat::zero(100, 2);
+  y = mat::zeros(100, 2);
   if (xinput.is_open() && yinput.is_open()) {
     cout << "reading data..." << endl;
     for (uint32_t i = 0 ; i < 100 ; i ++) {
