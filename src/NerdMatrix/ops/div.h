@@ -1,5 +1,5 @@
-#ifndef ADD_H
-#define ADD_H
+#ifndef DIV_H
+#define DIV_H
 
 #include "NerdMatrix/except/nerdmatrix_illegal_ops.h"
 #include "NerdMatrix/matrix.h"
@@ -10,28 +10,30 @@ namespace matrix {
 namespace ops {
 
 template <typename T>
-void Add(const NerdMatrix<T>& m1, const NerdMatrix<T>& m2,
+void Div(const NerdMatrix<T>& m1, const NerdMatrix<T>& m2,
          NerdMatrix<T>& result) {
   if (m1.rows() != m2.rows() || m1.cols() != m2.cols()) {
-    throw except::IllegalOpsException("Matrix Add: Input Size does not match.");
+    throw except::IllegalOpsException(
+        "Matrix Element-wise Division: Input Size does not match.");
   } else {
     result = NerdMatrix<float>(m1.rows(), m1.cols());
     int n = m1.rows() * m1.cols();
     for (int i = 0; i < n; ++i) {
-      result[i] = m1.data()[i] + m2.data()[i];
+      result[i] = m1.data()[i] / m2.data()[i];
     }
   }
 }
 
 template <typename T>
-NerdMatrix<T> operator+(const NerdMatrix<T>& m1, const NerdMatrix<T>& m2) {
+NerdMatrix<T> operator/(const NerdMatrix<T>& m1, const NerdMatrix<T>& m2) {
   if (m1.rows() != m2.rows() || m1.cols() != m2.cols()) {
-    throw except::IllegalOpsException("Matrix Add: Input Size does not match.");
+    throw except::IllegalOpsException(
+        "Matrix Element-wise Division: Input Size does not match.");
   } else {
     NerdMatrix<T> result(m1.rows(), m1.cols());
     int n = m1.rows() * m1.cols();
     for (int i = 0; i < n; ++i) {
-      result[i] = m1.data()[i] + m2.data()[i];
+      result[i] = m1.data()[i] / m2.data()[i];
     }
     return result;
   }
@@ -41,4 +43,4 @@ NerdMatrix<T> operator+(const NerdMatrix<T>& m1, const NerdMatrix<T>& m2) {
 } /* end of matrix namespace */
 } /* end of nerd namespace */
 
-#endif /* end of include guard: ADD_H */
+#endif /* end of include guard: DIV_H */
