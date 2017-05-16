@@ -9,10 +9,10 @@ class NerdMatrix {
  public:
   NerdMatrix();
   NerdMatrix(int rows, int cols);
-  NerdMatrix(const NerdMatrix& NerdMatrix);
-  NerdMatrix(NerdMatrix&& NerdMatrix);
-  NerdMatrix& operator=(const NerdMatrix& NerdMatrix);
-  NerdMatrix& operator=(NerdMatrix&& NerdMatrix);
+  NerdMatrix(const NerdMatrix& m);
+  NerdMatrix(NerdMatrix&& m);
+  NerdMatrix& operator=(const NerdMatrix& m);
+  NerdMatrix& operator=(NerdMatrix&& m);
   ~NerdMatrix();
 
   int rows() const { return rows_; }
