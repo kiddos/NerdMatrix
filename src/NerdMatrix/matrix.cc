@@ -26,7 +26,7 @@ template <typename T>
 NerdMatrix<T>::NerdMatrix(const NerdMatrix& m)
     : rows_(m.rows_), cols_(m.cols_), data_(nullptr) {
   if (rows_ > 0 && cols_ > 0) {
-    data_ = new T[rows_ * cols_];
+    data_ = new T[rows_ * cols_]{0};
     wrapper::Copy(rows_ * cols_, m.data_, data_);
   }
 }
@@ -44,7 +44,7 @@ NerdMatrix<T>& NerdMatrix<T>::operator=(const NerdMatrix& m) {
   cols_ = m.cols_;
   if (n < m.rows_ * m.cols_) {
     delete[] data_;
-    data_ = new T[rows_ * cols_];
+    data_ = new T[rows_ * cols_]{0};
     wrapper::Copy(rows_ * cols_, m.data_, data_);
   } else {
     wrapper::Copy(rows_ * cols_, m.data_, data_);
