@@ -20,40 +20,40 @@ class TestNerdMatrix : public ::testing::Test {
   }
 
   void TestConstructor() {
-    NerdMatrix<float> small(1, 1);
+    NerdMatrix<T> small(1, 1);
     EXPECT_EQ(small.rows(), 1);
     EXPECT_EQ(small.cols(), 1);
     EXPECT_NE(small.data(), nullptr);
 
-    NerdMatrix<float> medium(1024, 1024);
+    NerdMatrix<T> medium(1024, 1024);
     EXPECT_EQ(medium.rows(), 1024);
     EXPECT_EQ(medium.cols(), 1024);
     EXPECT_NE(medium.data(), nullptr);
 
     for (int i = 0; i < 1024 * 1024; ++i) {
-      EXPECT_EQ(medium[i], 0);
+      EXPECT_EQ(medium[i], T{0});
     }
 
     // exception cases
-    EXPECT_THROW(NerdMatrix<float> empty1(0, 1),
+    EXPECT_THROW(NerdMatrix<T> empty1(0, 1),
                  nerd::except::NerdMatrixException);
-    EXPECT_THROW(NerdMatrix<float> empty2(1, 0),
+    EXPECT_THROW(NerdMatrix<T> empty2(1, 0),
                  nerd::except::NerdMatrixException);
-    EXPECT_THROW(NerdMatrix<float> empty3(0, 0),
+    EXPECT_THROW(NerdMatrix<T> empty3(0, 0),
                  nerd::except::NerdMatrixException);
   }
 
   void TestCopyConstructor() {
-    NerdMatrix<float> m1(1024, 1024);
+    NerdMatrix<T> m1(1024, 1024);
     // randomize data
     std::mt19937 gen(
         std::chrono::system_clock::now().time_since_epoch().count());
     std::normal_distribution<float> dist(0, 1.0f);
     for (int i = 0; i < 1024 * 1024; ++i) {
-      m1[i] = dist(gen);
+      m1[i] = static_cast<T>(dist(gen));
     }
 
-    NerdMatrix<float> m2 = m1;
+    NerdMatrix<T> m2 = m1;
 
     EXPECT_EQ(m1.rows(), m2.rows());
     EXPECT_EQ(m1.cols(), m2.cols());
@@ -66,27 +66,27 @@ class TestNerdMatrix : public ::testing::Test {
   }
 
   void TestMoveConstructor() {
-    NerdMatrix<float> m(std::move(NerdMatrix<float>(1024, 1024)));
+    NerdMatrix<T> m(std::move(NerdMatrix<T>(1024, 1024)));
 
     EXPECT_EQ(m.rows(), 1024);
     EXPECT_EQ(m.cols(), 1024);
     EXPECT_NE(m.data(), nullptr);
 
-    EXPECT_THROW(NerdMatrix<float> empty(std::move(NerdMatrix<float>(0, 0))),
+    EXPECT_THROW(NerdMatrix<T> empty(std::move(NerdMatrix<T>(0, 0))),
                  nerd::except::NerdMatrixException);
   }
 
   void TestCopyOperator() {
-    NerdMatrix<float> m1(1024, 1024);
+    NerdMatrix<T> m1(1024, 1024);
     // randomize data
     std::mt19937 gen(
         std::chrono::system_clock::now().time_since_epoch().count());
     std::normal_distribution<float> dist(0, 1.0f);
     for (int i = 0; i < 1024 * 1024; ++i) {
-      m1[i] = dist(gen);
+      m1[i] = static_cast<T>(dist(gen));
     }
 
-    NerdMatrix<float> m2(1024, 1024);
+    NerdMatrix<T> m2(1024, 1024);
     m2 = m1;
 
     EXPECT_EQ(m1.rows(), m2.rows());
@@ -100,24 +100,24 @@ class TestNerdMatrix : public ::testing::Test {
   }
 
   void TestMoveOperator() {
-    NerdMatrix<float> m(1024, 1024);
+    NerdMatrix<T> m(1024, 1024);
     // randomize data
     std::mt19937 gen(
         std::chrono::system_clock::now().time_since_epoch().count());
     std::normal_distribution<float> dist(0, 1.0f);
     for (int i = 0; i < 1024 * 1024; ++i) {
-      m[i] = dist(gen);
+      m[i] = static_cast<T>(dist(gen));
     }
 
     EXPECT_EQ(m.rows(), 1024);
     EXPECT_EQ(m.cols(), 1024);
     EXPECT_NE(m.data(), nullptr);
 
-    m = std::move(NerdMatrix<float>(1024, 1024));
+    m = std::move(NerdMatrix<T>(1024, 1024));
 
     // check if data is copy
     for (int i = 0; i < 1024 * 1024; ++i) {
-      EXPECT_EQ(m[i], 0);
+      EXPECT_EQ(m[i], T{0});
     }
   }
 };
