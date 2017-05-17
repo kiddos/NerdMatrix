@@ -1,4 +1,5 @@
 find_package(GTest REQUIRED)
+
 include_directories(${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/src)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_INCLUDE_CURRENT_DIR on)
@@ -9,38 +10,23 @@ if (TARGET NerdMatrix)
   add_executable(test_nerdmatrix test_nerdmatrix.cc)
   target_link_libraries(test_nerdmatrix ${TEST_LIBS})
   add_test(TestNerdMatrix test_nerdmatrix)
+
+  add_executable(test_nerdmatrix_elementwise_ops test_nerdmatrix_elementwise_ops.cc)
+  target_link_libraries(test_nerdmatrix_elementwise_ops ${TEST_LIBS})
+  add_test(TestNerdMatrixElementwiseOps test_nerdmatrix_elementwise_ops)
+
+  add_executable(test_nerdmatrix_matmul test_nerdmatrix_matmul.cc)
+  target_link_libraries(test_nerdmatrix_matmul ${TEST_LIBS})
+  add_test(TestNerdMatrixMatMul test_nerdmatrix_matmul)
 endif ()
 
+# benchmark
+find_library(BENCHMARK_LIBRARIES benchmark)
+if (TARGET NerdMatrix AND BENCHMARK_LIBRARIES)
+  message(STATUS "Using Google Benchmark ${BENCHMARK_LIBRARIES}")
+  set(BENCHMARK_LIBS ${BENCHMARK_LIBRARIES} pthread NerdMatrix)
 
-
-
-
-
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++11 -Wall -O2")
-
-# include (CheckIncludeFiles)
-
-# check_include_files(omp.h HAVE_OPENMP)
-# if (HAVE_OPENMP)
-#   message(STATUS "using OpenMP")
-#   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -DPARALLEL")
-# endif (HAVE_OPENMP)
-
-# add_executable(test1 mattest1.cpp)
-# add_executable(test2 mattest2.cpp)
-# add_executable(test3 mattest3.cpp)
-# add_executable(test4 mattest4.cpp)
-# add_executable(test5 mattest5.cpp)
-# add_executable(test6 mattest6.cpp)
-# add_executable(testnn mattestnn.cpp)
-# add_executable(testnn2 mattestnn2.cpp)
-
-# target_link_libraries(test2 armadillo)
-# target_link_libraries(testnn2 opencv_core opencv_highgui opencv_imgproc)
-
-# add_test(NAME constructortest COMMAND ./test1)
-# add_test(NAME optest COMMAND ./test2)
-# add_test(NAME rowoptest COMMAND ./test3)
-# add_test(NAME optest2 COMMAND ./test4)
-# add_test(NAME optest3 COMMAND ./test5)
-# add_test(NAME statictest COMMAND ./test6)
+  add_executable(benchmark_element_wise_ops  benchmark/benchmark_element_wise_ops.cc)
+  target_compile_options(benchmark_element_wise_ops PRIVATE -O3)
+  target_link_libraries(benchmark_element_wise_ops ${BENCHMARK_LIBS})
+endif ()
