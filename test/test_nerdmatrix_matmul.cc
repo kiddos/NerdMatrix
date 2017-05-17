@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <complex>
-#include "NerdMatrix/except/nerdmatrix_exception.h"
+#include "NerdMatrix/except/nerdmatrix_illegal_ops.h"
 #include "NerdMatrix/matrix.h"
 #include "NerdMatrix/ops/matmul.h"
 
@@ -28,12 +28,15 @@ class TestNerdMatrixMatMul : public ::testing::Test {
         EXPECT_LT(std::abs(c[i * n + j] - value), 1e-4);
       }
     }
+
+    b = NerdMatrix<T>(k + 1, n);
+    EXPECT_THROW(nerd::matrix::ops::MatMul(a, b, c),
+                 nerd::except::IllegalOpsException);
   }
 };
 
-typedef ::testing::Types<float, double, complex<float>, complex<double>> TestTypes;
+typedef ::testing::Types<float, double, complex<float>, complex<double>>
+    TestTypes;
 TYPED_TEST_CASE(TestNerdMatrixMatMul, TestTypes);
 
-TYPED_TEST(TestNerdMatrixMatMul, MatMul) {
-  this->TestMatMul();
-}
+TYPED_TEST(TestNerdMatrixMatMul, MatMul) { this->TestMatMul(); }
