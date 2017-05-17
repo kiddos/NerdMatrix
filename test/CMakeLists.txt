@@ -29,4 +29,8 @@ if (TARGET NerdMatrix AND BENCHMARK_LIBRARIES)
   add_executable(benchmark_element_wise_ops  benchmark/benchmark_element_wise_ops.cc)
   target_compile_options(benchmark_element_wise_ops PRIVATE -O3)
   target_link_libraries(benchmark_element_wise_ops ${BENCHMARK_LIBS})
+
+  add_executable(benchmark_matmul  benchmark/benchmark_matmul.cc)
+  target_compile_options(benchmark_matmul PRIVATE -O3)
+  target_link_libraries(benchmark_matmul ${BENCHMARK_LIBS})
 endif ()
