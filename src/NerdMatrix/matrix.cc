@@ -70,7 +70,7 @@ NerdMatrix<T>::~NerdMatrix() {
 template <typename T>
 NerdMatrix<T> NerdMatrix<T>::GetRow(int i) {
   if (i < 0 || i >= rows_) {
-    throw except::NerdMatrixException("NerdMatrix GetRows: Invalid index.");
+    throw except::NerdMatrixException("NerdMatrix GetRow: Invalid index.");
   }
 
   NerdMatrix<T> row(1, cols_);
@@ -84,7 +84,7 @@ NerdMatrix<T> NerdMatrix<T>::GetRow(int i) {
 template <typename T>
 NerdMatrix<T> NerdMatrix<T>::GetCol(int j) {
   if (j < 0 || j >= cols_) {
-    throw except::NerdMatrixException("NerdMatrix GetRows: Invalid index.");
+    throw except::NerdMatrixException("NerdMatrix GetCol: Invalid index.");
   }
 
   NerdMatrix<T> col(cols_, 1);
@@ -118,10 +118,10 @@ template <typename T>
 NerdMatrix<T> NerdMatrix<T>::GetCols(int j1, int j2) {
   if (j1 < 0 || j2 > cols_) {
     throw except::NerdMatrixException(
-        "NerdMatrix GetRows: Invalid starting index.");
+        "NerdMatrix GetCols: Invalid starting index.");
   }
   if (j2 <= j1) {
-    throw except::NerdMatrixException("NerdMatrix GetRows: Invalid size.");
+    throw except::NerdMatrixException("NerdMatrix GetCols: Invalid size.");
   }
 
   int ncols = j2 - j1;
@@ -138,18 +138,20 @@ template <typename T>
 NerdMatrix<T> NerdMatrix<T>::SubMatrix(int i1, int i2, int j1, int j2) {
   if (i1 < 0 || i2 > rows_) {
     throw except::NerdMatrixException(
-        "NerdMatrix GetRows: Invalid starting index.");
+        "NerdMatrix SubMatrix: Invalid starting index.");
   }
   if (i2 <= i1) {
-    throw except::NerdMatrixException("NerdMatrix GetRows: Invalid size.");
+    throw except::NerdMatrixException(
+        "NerdMatrix SubMatrix: Invalid row size.");
   }
 
   if (j1 < 0 || j2 > cols_) {
     throw except::NerdMatrixException(
-        "NerdMatrix GetRows: Invalid starting index.");
+        "NerdMatrix SubMatrix: Invalid starting index.");
   }
   if (j2 <= j1) {
-    throw except::NerdMatrixException("NerdMatrix GetRows: Invalid size.");
+    throw except::NerdMatrixException(
+        "NerdMatrix SubMatrix: Invalid col size.");
   }
 
   int nrows = i2 - i1;
