@@ -3,6 +3,7 @@
 #include <random>
 #include "NerdMatrix/except/nerdmatrix_exception.h"
 #include "NerdMatrix/matrix.h"
+#include "NerdMatrix/factory.h"
 #include "NerdMatrix/ops/add.h"
 #include "NerdMatrix/ops/sub.h"
 #include "NerdMatrix/ops/mul.h"
@@ -10,85 +11,98 @@
 
 using std::complex;
 using nerd::matrix::NerdMatrix;
+using namespace nerd::matrix::factory;
 using namespace nerd::matrix::ops;
-
-template <typename T>
-void RandomInit(NerdMatrix<T>& m) {
-  std::mt19937 gen(std::chrono::system_clock::now().time_since_epoch().count());
-  std::normal_distribution<double> dist(0, 1.0f);
-  for (int i = 0; i < m.rows() * m.cols(); ++i) {
-    m[i] = static_cast<T>(dist(gen));
-  }
-}
 
 template <typename T>
 class TestNerdMatrixElementwiseOps : public ::testing::Test {
  public:
+  int size_;
+
   void TestAdd() {
-    int size = 1024;
-    NerdMatrix<T> a(size, size);
-    NerdMatrix<T> b(size, size);
-    RandomInit(a);
-    RandomInit(b);
-
+    NerdMatrix<T> a = Randn<T>(size_, size_, 0, 1);
+    NerdMatrix<T> b = Randn<T>(size_, size_, 0, 1);
     NerdMatrix<T> c = a + b;
-
-    for (int i = 0 ; i < size ; ++i) {
+    for (int i = 0 ; i < size_ ; ++i) {
       EXPECT_EQ(c[i], a[i] + b[i]);
     }
 
-    NerdMatrix<T> d(size, size -1);
+    // function call test
+    Add(a, b, c);
+    for (int i = 0 ; i < size_ ; ++i) {
+      EXPECT_EQ(c[i], a[i] + b[i]);
+    }
+
+    // single value
+    c = a + 1;
+    for (int i = 0 ; i < size_ ; ++i) {
+      EXPECT_EQ(c[i], a[i] + static_cast<T>(1));
+    }
+
+    NerdMatrix<T> d(size_, size_ -1);
     EXPECT_THROW(c = c + d, nerd::except::IllegalOpsException);
   }
 
   void TestSub() {
-    int size = 1024;
-    NerdMatrix<T> a(size, size);
-    NerdMatrix<T> b(size, size);
-    RandomInit(a);
-    RandomInit(b);
-
+    NerdMatrix<T> a = Randn<T>(size_, size_, 0, 1);
+    NerdMatrix<T> b = Randn<T>(size_, size_, 0, 1);
     NerdMatrix<T> c = a - b;
 
-    for (int i = 0 ; i < size ; ++i) {
+    // function call test
+    Sub(a, b, c);
+    for (int i = 0 ; i < size_ ; ++i) {
       EXPECT_EQ(c[i], a[i] - b[i]);
     }
 
-    NerdMatrix<T> d(size, size -1);
+    // single value
+    c = a - 1;
+    for (int i = 0 ; i < size_ ; ++i) {
+      EXPECT_EQ(c[i], a[i] - static_cast<T>(1));
+    }
+
+    NerdMatrix<T> d(size_, size_ -1);
     EXPECT_THROW(c = c - d, nerd::except::IllegalOpsException);
   }
 
   void TestMul() {
-    int size = 1024;
-    NerdMatrix<T> a(size, size);
-    NerdMatrix<T> b(size, size);
-    RandomInit(a);
-    RandomInit(b);
-
+    NerdMatrix<T> a = Randn<T>(size_, size_, 0, 1);
+    NerdMatrix<T> b = Randn<T>(size_, size_, 0, 1);
     NerdMatrix<T> c = a * b;
 
-    for (int i = 0 ; i < size ; ++i) {
+    // function call test
+    Mul(a, b, c);
+    for (int i = 0 ; i < size_ ; ++i) {
       EXPECT_EQ(c[i], a[i] * b[i]);
     }
 
-    NerdMatrix<T> d(size, size -1);
+    // single value
+    c = a * 10;
+    for (int i = 0 ; i < size_ ; ++i) {
+      EXPECT_EQ(c[i], a[i] * static_cast<T>(10));
+    }
+
+    NerdMatrix<T> d(size_, size_ -1);
     EXPECT_THROW(c = c * d, nerd::except::IllegalOpsException);
   }
 
   void TestDiv() {
-    int size = 1024;
-    NerdMatrix<T> a(size, size);
-    NerdMatrix<T> b(size, size);
-    RandomInit(a);
-    RandomInit(b);
-
+    NerdMatrix<T> a = Randn<T>(size_, size_, 0, 1);
+    NerdMatrix<T> b = Randn<T>(size_, size_, 0, 1);
     NerdMatrix<T> c = a / b;
 
-    for (int i = 0 ; i < size ; ++i) {
+    // function call test
+    Div(a, b, c);
+    for (int i = 0 ; i < size_ ; ++i) {
       EXPECT_EQ(c[i], a[i] / b[i]);
     }
 
-    NerdMatrix<T> d(size, size -1);
+    // single value
+    c = a / 10;
+    for (int i = 0 ; i < size_ ; ++i) {
+      EXPECT_EQ(c[i], a[i] / static_cast<T>(10));
+    }
+
+    NerdMatrix<T> d(size_, size_ -1);
     EXPECT_THROW(c = c / d, nerd::except::IllegalOpsException);
   }
 };
@@ -97,17 +111,21 @@ typedef ::testing::Types<float, double, complex<float>, complex<double>> TestTyp
 TYPED_TEST_CASE(TestNerdMatrixElementwiseOps, TestTypes);
 
 TYPED_TEST(TestNerdMatrixElementwiseOps, Add) {
+  this->size_ = 1024;
   this->TestAdd();
 }
 
 TYPED_TEST(TestNerdMatrixElementwiseOps, Sub) {
+  this->size_ = 1024;
   this->TestSub();
 }
 
 TYPED_TEST(TestNerdMatrixElementwiseOps, Mul) {
+  this->size_ = 1024;
   this->TestMul();
 }
 
 TYPED_TEST(TestNerdMatrixElementwiseOps, Div) {
+  this->size_ = 1024;
   this->TestDiv();
 }
