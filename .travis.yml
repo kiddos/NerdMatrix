@@ -1,6 +1,8 @@
-install: make libgtest-dev libopenblas-dev
-
 language: cpp
 compiler: gcc
+
+before_install:
+- sudo apt-get update -qq
+- sudo apt-get install -qq cmake libgtest-dev libopenblas-dev
 
 script: ./build.sh
