@@ -26,6 +26,13 @@ void MatMul(const NerdMatrix<T>& a, const NerdMatrix<T>& b, NerdMatrix<T>& c) {
   }
 }
 
+template <typename T>
+NerdMatrix<T> operator%(const NerdMatrix<T>& a, const NerdMatrix<T>& b) {
+  NerdMatrix<T> c;
+  MatMul(a, b, c);
+  return c;
+}
+
 } /* end of ops namespace */
 } /* end of matrix namespace */
 } /* end of nerd namespace */
