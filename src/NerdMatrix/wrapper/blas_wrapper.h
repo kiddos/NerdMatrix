@@ -1,8 +1,6 @@
 #ifndef BLAS_WRAPPER_H
 #define BLAS_WRAPPER_H
 
-#include <complex>
-
 namespace nerd {
 namespace matrix {
 namespace wrapper {

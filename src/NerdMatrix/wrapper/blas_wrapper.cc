@@ -1,4 +1,5 @@
 #include "NerdMatrix/wrapper/blas_wrapper.h"
+#include <complex>
 #include <cblas.h>
 
 namespace nerd {
