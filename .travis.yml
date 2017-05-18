@@ -1,0 +1,6 @@
+install: make libgtest-dev libopenblas-dev
+
+language: cpp
+compiler: gcc
+
+script: ./build.sh
