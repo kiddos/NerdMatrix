@@ -1,9 +1,12 @@
 language: cpp
 compiler: gcc
 
-before_install:
-- sudo add-apt-repository ppa:george-edison55/cmake-3.x --yes
-- sudo apt-get update -qq
-- sudo apt-get install -qq cmake libgtest-dev libopenblas-dev
+addons:
+  apt:
+    sources:
+      - george-edison55-precise-backports
+    packages:
+      - cmake
+      - cmake-data
 
 script: ./build.sh
