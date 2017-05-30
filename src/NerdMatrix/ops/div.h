@@ -35,6 +35,12 @@ NerdMatrix<T> operator/(const NerdMatrix<T>& m, U val) {
   return result;
 }
 
+template <typename T>
+NerdMatrix<T>& operator/=(NerdMatrix<T>& m, const NerdMatrix<T>& m2) {
+  m = m / m2;
+  return m;
+}
+
 template <typename T, typename U>
 void Div(const NerdMatrix<T>& m, U u, NerdMatrix<T>& result) {
   result = m / u;
